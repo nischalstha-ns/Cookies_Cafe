@@ -25,22 +25,30 @@
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+      const messageDiv = document.getElementById('message');
       
-      const res = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        localStorage.setItem('token', data.session.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        window.location.href = '/dashboard.html';
-      } else {
-        document.getElementById('message').textContent = data.error;
-        document.getElementById('message').className = 'error';
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.session) {
+          localStorage.setItem('token', data.session.access_token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          messageDiv.textContent = 'Login successful! Redirecting...';
+          messageDiv.className = 'success';
+          setTimeout(() => window.location.href = '/dashboard.html', 1000);
+        } else {
+          messageDiv.textContent = data.error || 'Login failed';
+          messageDiv.className = 'error';
+        }
+      } catch (error) {
+        messageDiv.textContent = 'Network error. Please try again.';
+        messageDiv.className = 'error';
       }
     });
   </script>

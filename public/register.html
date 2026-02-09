@@ -25,22 +25,28 @@
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+      const messageDiv = document.getElementById('message');
       
-      const res = await fetch('/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        document.getElementById('message').textContent = 'Registration successful! Redirecting to login...';
-        document.getElementById('message').className = 'success';
-        setTimeout(() => window.location.href = '/login.html', 2000);
-      } else {
-        document.getElementById('message').textContent = data.error;
-        document.getElementById('message').className = 'error';
+      try {
+        const res = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          messageDiv.textContent = 'Registration successful! Redirecting to login...';
+          messageDiv.className = 'success';
+          setTimeout(() => window.location.href = '/login.html', 2000);
+        } else {
+          messageDiv.textContent = data.error || 'Registration failed';
+          messageDiv.className = 'error';
+        }
+      } catch (error) {
+        messageDiv.textContent = 'Network error. Please try again.';
+        messageDiv.className = 'error';
       }
     });
   </script>

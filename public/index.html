@@ -1,43 +1,359 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cookies Cafe - Login & Register</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Cookies Cafe</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; }
+    .nav { background: #333; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .nav button { margin-left: 1rem; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; }
+    .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2rem; }
+    .card { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .card img { font-size: 4rem; }
+    .card h3 { margin: 1rem 0; }
+    .card .price { font-size: 1.5rem; color: #ff6b6b; font-weight: bold; margin: 1rem 0; }
+    .btn { padding: 0.8rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .btn-primary { background: #ff6b6b; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+    .modal-content { background: white; margin: 5% auto; padding: 2rem; width: 90%; max-width: 600px; border-radius: 10px; max-height: 80vh; overflow-y: auto; }
+    .hidden { display: none; }
+    input, textarea { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 5px; }
+    .cart-item { display: flex; justify-content: space-between; padding: 1rem; border-bottom: 1px solid #eee; }
+    .badge { background: #ff6b6b; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
+    table { width: 100%; border-collapse: collapse; }
+    table th, table td { padding: 1rem; text-align: left; border-bottom: 1px solid #ddd; }
+  </style>
 </head>
 <body>
+  <nav class="nav">
+    <h2>🍪 Cookies Cafe</h2>
+    <div>
+      <button onclick="showPage('products')" class="btn btn-secondary">Products</button>
+      <button onclick="showCart()" class="btn btn-secondary">Cart <span id="cartBadge" class="badge">0</span></button>
+      <button id="authBtn" onclick="showAuth()" class="btn btn-primary">Login</button>
+      <button id="ordersBtn" onclick="showOrders()" class="btn btn-secondary hidden">Orders</button>
+      <button id="adminBtn" onclick="showAdmin()" class="btn btn-secondary hidden">Admin</button>
+    </div>
+  </nav>
+
   <div class="container">
-    <div class="form-container" id="loginForm">
-      <h2>Login</h2>
-      <form onsubmit="handleLogin(event)">
-        <input type="email" id="loginEmail" placeholder="Email" required>
-        <input type="password" id="loginPassword" placeholder="Password" required>
-        <button type="submit">Login</button>
-      </form>
-      <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+    <div id="productsPage">
+      <h1>Our Products</h1>
+      <div id="productsList" class="grid"></div>
     </div>
 
-    <div class="form-container hidden" id="registerForm">
-      <h2>Register</h2>
-      <form onsubmit="handleRegister(event)">
-        <input type="text" id="registerName" placeholder="Full Name" required>
-        <input type="email" id="registerEmail" placeholder="Email" required>
-        <input type="password" id="registerPassword" placeholder="Password" required>
-        <button type="submit">Register</button>
-      </form>
-      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+    <div id="productDetailPage" class="hidden">
+      <button onclick="showPage('products')" class="btn btn-secondary">← Back</button>
+      <div id="productDetail"></div>
     </div>
 
-    <div class="dashboard hidden" id="dashboard">
-      <h2>Welcome, <span id="userName"></span>!</h2>
-      <p>Email: <span id="userEmail"></span></p>
-      <button onclick="handleLogout()">Logout</button>
+    <div id="ordersPage" class="hidden">
+      <h1>My Orders</h1>
+      <div id="ordersList"></div>
     </div>
 
-    <div id="message"></div>
+    <div id="adminPage" class="hidden">
+      <h1>Admin Dashboard</h1>
+      <button onclick="showAddProduct()" class="btn btn-primary">Add Product</button>
+      <h2>All Orders</h2>
+      <div id="adminOrders"></div>
+    </div>
   </div>
 
-  <script src="script.js"></script>
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <h2 id="authTitle">Login</h2>
+      <input type="email" id="authEmail" placeholder="Email">
+      <input type="password" id="authPassword" placeholder="Password">
+      <button onclick="handleAuth()" class="btn btn-primary">Submit</button>
+      <p><a href="#" onclick="toggleAuthMode()">Switch to Register</a></p>
+    </div>
+  </div>
+
+  <div id="cartModal" class="modal">
+    <div class="modal-content">
+      <h2>Shopping Cart</h2>
+      <div id="cartItems"></div>
+      <h3>Total: $<span id="cartTotal">0</span></h3>
+      <button onclick="checkout()" class="btn btn-primary">Checkout</button>
+    </div>
+  </div>
+
+  <div id="checkoutModal" class="modal">
+    <div class="modal-content">
+      <h2>Checkout</h2>
+      <input type="text" id="shippingAddress" placeholder="Shipping Address">
+      <div id="card-element" style="border: 1px solid #ddd; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;"></div>
+      <button onclick="processPayment()" class="btn btn-primary">Pay Now</button>
+    </div>
+  </div>
+
+  <div id="productModal" class="modal">
+    <div class="modal-content">
+      <h2>Add/Edit Product</h2>
+      <input type="text" id="prodName" placeholder="Name">
+      <textarea id="prodDesc" placeholder="Description"></textarea>
+      <input type="number" id="prodPrice" placeholder="Price" step="0.01">
+      <input type="text" id="prodImage" placeholder="Image URL">
+      <input type="number" id="prodStock" placeholder="Stock">
+      <input type="text" id="prodCategory" placeholder="Category">
+      <button onclick="saveProduct()" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+    let token = localStorage.getItem('token');
+    let role = localStorage.getItem('role');
+    let cart = [];
+    let isLogin = true;
+    const stripe = Stripe('pk_test_51QcVxJP3Zt9aBCqJKxxxxxxxxxxx');
+    let cardElement;
+
+    async function loadProducts() {
+      const res = await fetch(`${API}/products`);
+      const products = await res.json();
+      document.getElementById('productsList').innerHTML = products.map(p => `
+        <div class="card">
+          <div>${p.image_url}</div>
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <div class="price">$${p.price}</div>
+          <button onclick="viewProduct('${p.id}')" class="btn btn-secondary">View</button>
+          <button onclick="addToCart('${p.id}', '${p.name}', ${p.price})" class="btn btn-primary">Add to Cart</button>
+        </div>
+      `).join('');
+    }
+
+    async function viewProduct(id) {
+      const res = await fetch(`${API}/products/${id}`);
+      const p = await res.json();
+      document.getElementById('productDetail').innerHTML = `
+        <div class="card" style="max-width: 600px; margin: 2rem auto;">
+          <div style="font-size: 6rem;">${p.image_url}</div>
+          <h2>${p.name}</h2>
+          <p>${p.description}</p>
+          <div class="price">$${p.price}</div>
+          <p>Stock: ${p.stock}</p>
+          <button onclick="addToCart('${p.id}', '${p.name}', ${p.price})" class="btn btn-primary">Add to Cart</button>
+        </div>
+      `;
+      showPage('productDetail');
+    }
+
+    function addToCart(id, name, price) {
+      const existing = cart.find(item => item.product_id === id);
+      if (existing) existing.quantity++;
+      else cart.push({ product_id: id, name, price, quantity: 1 });
+      updateCartUI();
+      alert('Added to cart!');
+    }
+
+    function updateCartUI() {
+      document.getElementById('cartBadge').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      document.getElementById('cartTotal').textContent = total.toFixed(2);
+      document.getElementById('cartItems').innerHTML = cart.map((item, idx) => `
+        <div class="cart-item">
+          <div><strong>${item.name}</strong><br>$${item.price} x ${item.quantity}</div>
+          <button onclick="removeFromCart(${idx})" class="btn btn-secondary">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    function removeFromCart(idx) {
+      cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function showCart() {
+      if (!token) return alert('Please login first');
+      document.getElementById('cartModal').style.display = 'block';
+    }
+
+    function checkout() {
+      if (cart.length === 0) return alert('Cart is empty');
+      document.getElementById('cartModal').style.display = 'none';
+      document.getElementById('checkoutModal').style.display = 'block';
+      if (!cardElement) {
+        const elements = stripe.elements();
+        cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+      }
+    }
+
+    async function processPayment() {
+      const address = document.getElementById('shippingAddress').value;
+      if (!address) return alert('Enter shipping address');
+
+      const res = await fetch(`${API}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ items: cart })
+      });
+      const { clientSecret } = await res.json();
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card: cardElement }
+      });
+
+      if (error) return alert(error.message);
+
+      await fetch(`${API}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          items: cart,
+          total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          stripe_payment_id: paymentIntent.id,
+          shipping_address: address
+        })
+      });
+
+      alert('Order placed successfully!');
+      cart = [];
+      updateCartUI();
+      document.getElementById('checkoutModal').style.display = 'none';
+    }
+
+    async function showOrders() {
+      const res = await fetch(`${API}/orders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const orders = await res.json();
+      document.getElementById('ordersList').innerHTML = orders.map(o => `
+        <div class="card">
+          <h3>Order #${o.id.substring(0, 8)}</h3>
+          <p>Total: $${o.total}</p>
+          <p>Status: ${o.status}</p>
+          <p>Date: ${new Date(o.created_at).toLocaleDateString()}</p>
+          ${o.order_items.map(item => `<p>${item.products.name} x ${item.quantity}</p>`).join('')}
+        </div>
+      `).join('');
+      showPage('orders');
+    }
+
+    async function showAdmin() {
+      const res = await fetch(`${API}/admin/orders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const orders = await res.json();
+      document.getElementById('adminOrders').innerHTML = `
+        <table>
+          <tr><th>Order ID</th><th>User</th><th>Total</th><th>Status</th><th>Action</th></tr>
+          ${orders.map(o => `
+            <tr>
+              <td>${o.id.substring(0, 8)}</td>
+              <td>${o.users?.email}</td>
+              <td>$${o.total}</td>
+              <td>${o.status}</td>
+              <td><button onclick="updateOrderStatus('${o.id}', 'shipped')" class="btn btn-secondary">Ship</button></td>
+            </tr>
+          `).join('')}
+        </table>
+      `;
+      showPage('admin');
+    }
+
+    async function updateOrderStatus(id, status) {
+      await fetch(`${API}/admin/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      showAdmin();
+    }
+
+    function showAddProduct() {
+      document.getElementById('productModal').style.display = 'block';
+    }
+
+    async function saveProduct() {
+      const product = {
+        name: document.getElementById('prodName').value,
+        description: document.getElementById('prodDesc').value,
+        price: parseFloat(document.getElementById('prodPrice').value),
+        image_url: document.getElementById('prodImage').value,
+        stock: parseInt(document.getElementById('prodStock').value),
+        category: document.getElementById('prodCategory').value
+      };
+
+      await fetch(`${API}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(product)
+      });
+
+      document.getElementById('productModal').style.display = 'none';
+      loadProducts();
+    }
+
+    async function handleAuth() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const endpoint = isLogin ? '/login' : '/register';
+
+      const res = await fetch(`${API}/auth${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        if (data.session) {
+          token = data.session.access_token;
+          role = data.role;
+          localStorage.setItem('token', token);
+          localStorage.setItem('role', role);
+          updateAuthUI();
+        }
+        document.getElementById('authModal').style.display = 'none';
+        alert(isLogin ? 'Login successful!' : 'Registration successful!');
+      } else {
+        alert(data.error);
+      }
+    }
+
+    function showAuth() {
+      if (token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        token = null;
+        role = null;
+        updateAuthUI();
+      } else {
+        document.getElementById('authModal').style.display = 'block';
+      }
+    }
+
+    function toggleAuthMode() {
+      isLogin = !isLogin;
+      document.getElementById('authTitle').textContent = isLogin ? 'Login' : 'Register';
+    }
+
+    function updateAuthUI() {
+      document.getElementById('authBtn').textContent = token ? 'Logout' : 'Login';
+      document.getElementById('ordersBtn').classList.toggle('hidden', !token);
+      document.getElementById('adminBtn').classList.toggle('hidden', role !== 'admin');
+    }
+
+    function showPage(page) {
+      document.querySelectorAll('[id$="Page"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById(page + 'Page').classList.remove('hidden');
+    }
+
+    window.onclick = (e) => {
+      if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+    };
+
+    loadProducts();
+    updateAuthUI();
+  </script>
 </body>
 </html>
