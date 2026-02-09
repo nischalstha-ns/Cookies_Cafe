@@ -10,7 +10,7 @@ const authMiddleware = require('./middleware/auth');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 5001;
 
 app.use(helmet());
 app.use(cors());
