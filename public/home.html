@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookies Cafe - Home</title>
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">🍪 Cookies Cafe</div>
+      <ul class="nav-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="#products">Products</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="nav-buttons">
+        <button onclick="location.href='/login.html'" class="btn-login">Login</button>
+        <button onclick="location.href='/register.html'" class="btn-register">Register</button>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Welcome to Cookies Cafe</h1>
+      <p>Delicious handmade cookies delivered to your door</p>
+      <button onclick="location.href='/login.html'" class="btn-hero">Get Started</button>
+    </div>
+  </section>
+
+  <section id="products" class="products">
+    <h2>Our Popular Cookies</h2>
+    <div class="product-grid" id="productGrid"></div>
+  </section>
+
+  <section id="about" class="about">
+    <h2>About Us</h2>
+    <p>We've been baking the finest cookies since 2024. Our recipes are passed down through generations, ensuring every bite is filled with love and tradition.</p>
+  </section>
+
+  <section id="contact" class="contact">
+    <h2>Contact Us</h2>
+    <p>Email: info@cookiescafe.com</p>
+    <p>Phone: (555) 123-4567</p>
+  </section>
+
+  <footer>
+    <p>&copy; 2024 Cookies Cafe. All rights reserved.</p>
+  </footer>
+
+  <script src="home.js"></script>
+</body>
+</html>

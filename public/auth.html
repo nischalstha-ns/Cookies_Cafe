@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookies Cafe - Login & Register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="form-container" id="loginForm">
+      <h2>Login</h2>
+      <form onsubmit="handleLogin(event)">
+        <input type="email" id="loginEmail" placeholder="Email" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+      <p><a href="/">← Back to Home</a></p>
+    </div>
+
+    <div class="form-container hidden" id="registerForm">
+      <h2>Register</h2>
+      <form onsubmit="handleRegister(event)">
+        <input type="text" id="registerName" placeholder="Full Name" required>
+        <input type="email" id="registerEmail" placeholder="Email" required>
+        <input type="password" id="registerPassword" placeholder="Password" required>
+        <button type="submit">Register</button>
+      </form>
+      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+      <p><a href="/">← Back to Home</a></p>
+    </div>
+
+    <div class="dashboard hidden" id="dashboard">
+      <h2>Welcome, <span id="userName"></span>!</h2>
+      <p>Email: <span id="userEmail"></span></p>
+      <button onclick="location.href='/'">Go to Home</button>
+      <button onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

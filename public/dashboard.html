@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Cookies Cafe</title>
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">🍪 Cookies Cafe</div>
+      <ul class="nav-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/dashboard.html">Dashboard</a></li>
+      </ul>
+      <div class="nav-buttons">
+        <button onclick="logout()" class="btn-register">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="products">
+    <h2>My Orders</h2>
+    <div id="ordersList"></div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login.html';
+    }
+
+    async function loadOrders() {
+      const res = await fetch('/orders/my', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const orders = await res.json();
+      
+      if (orders.length === 0) {
+        document.getElementById('ordersList').innerHTML = '<p style="text-align: center;">No orders yet</p>';
+        return;
+      }
+
+      document.getElementById('ordersList').innerHTML = orders.map(order => `
+        <div class="product-card" style="margin-bottom: 20px;">
+          <div class="product-image">${order.products.image_url}</div>
+          <h3>${order.products.name}</h3>
+          <p>Quantity: ${order.quantity}</p>
+          <span class="price">$${(order.products.price * order.quantity).toFixed(2)}</span>
+          <p style="font-size: 0.9rem; color: #666;">Ordered: ${new Date(order.created_at).toLocaleDateString()}</p>
+        </div>
+      `).join('');
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    loadOrders();
+  </script>
+</body>
+</html>

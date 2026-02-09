@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product - Cookies Cafe</title>
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">🍪 Cookies Cafe</div>
+      <ul class="nav-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/dashboard.html">Dashboard</a></li>
+      </ul>
+      <div class="nav-buttons">
+        <button onclick="location.href='/login.html'" class="btn-login">Login</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="products">
+    <div id="productDetail"></div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+
+    async function loadProduct() {
+      const res = await fetch(`/products/${productId}`);
+      const product = await res.json();
+      
+      document.getElementById('productDetail').innerHTML = `
+        <div class="product-card" style="max-width: 500px; margin: 0 auto;">
+          <div class="product-image">${product.image_url}</div>
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <span class="price">$${product.price}</span>
+          <input type="number" id="quantity" value="1" min="1" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+          <button class="btn-add" onclick="orderProduct('${product.id}')">Order Now</button>
+        </div>
+      `;
+    }
+
+    async function orderProduct(productId) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login first');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const quantity = document.getElementById('quantity').value;
+
+      const res = await fetch('/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ product_id: productId, quantity: parseInt(quantity) })
+      });
+
+      if (res.ok) {
+        alert('Order placed successfully!');
+        window.location.href = '/dashboard.html';
+      } else {
+        alert('Order failed');
+      }
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>
